@@ -50,16 +50,38 @@ On the **IIT (BHU) Varanasi** campus network (Wi-Fi & Hostel LAN), the institute
 ## ⚙️ Architecture & How It Works
 
 ```mermaid
-flowchart TD
-    A[Wi-Fi / LAN Connected] --> B{Connectivity Probe}
-    B -- Direct Internet Access --> C[Online: Keep-Alive Ping every 5m]
-    B -- Intercepted / 302 Redirect --> D[Captive Portal Detected 192.168.249.1:1000]
-    D --> E[Extract Dynamic 'magic' Token]
-    E --> F[Construct Payload & POST Credentials to /fgtauth]
-    F --> G{Authentication Valid?}
-    G -- Yes --> H[✓ Internet Unlocked & Desktop Notification]
-    G -- No --> I[Log Failure & Exponential Backoff]
+graph TD
+    A["Wi-Fi / LAN Connected"] --> B{"Connectivity Check (HTTP 204)"}
+    B -->|"Direct Internet Access"| C["Online: Session Keep-Alive"]
+    B -->|"Intercepted (302/307)"| D["Captive Portal (192.168.249.1:1000)"]
+    D --> E["Extract Dynamic 'magic' Token"]
+    E --> F["POST Credentials to /fgtauth"]
+    F --> G{"Authentication Valid?"}
+    G -->|"Success"| H["Internet Unlocked + Notification"]
+    G -->|"Failure"| I["Log Error & Exponential Backoff"]
     H --> C
+    I --> D
+```
+
+```
+[ Laptop Connected to Campus Wi-Fi / LAN ]
+                   │
+                   ▼
+       [ Connectivity Probe (204) ]
+         │                       │
+         ├─ (Online) ────────────┼──────────► [ Active: Keep-Alive Ping (5m) ]
+         │                       │
+         └─ (302 Intercept) ─────▼
+                  [ Captive Portal at 192.168.249.1:1000 ]
+                                 │
+                                 ▼
+                  [ Extract Dynamic 'magic' Token ]
+                                 │
+                                 ▼
+                  [ POST Roll No + Password to /fgtauth ]
+                                 │
+                                 ▼
+                  [ Internet Unlocked Successfully! ]
 ```
 
 ---
