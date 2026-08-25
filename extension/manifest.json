@@ -10,9 +10,7 @@
   "host_permissions": [
     "*://192.168.249.1/*",
     "*://detectportal.firefox.com/*",
-    "*://connectivitycheck.gstatic.com/*",
-    "*://127.0.0.1/*",
-    "*://localhost/*"
+    "*://connectivitycheck.gstatic.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",
@@ -36,9 +34,7 @@
       "matches": [
         "*://192.168.249.1/*",
         "*://*/*fgtauth*",
-        "*://detectportal.firefox.com/*",
-        "*://127.0.0.1/*",
-        "*://localhost/*"
+        "*://detectportal.firefox.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_end"
