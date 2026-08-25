@@ -82,36 +82,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3000);
   }
 
-  function formatTime(timestamp) {
+  function formatExactDateTime(timestamp) {
     if (!timestamp) return 'Never';
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return 'Never';
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return 'Never';
 
-    const now = new Date();
-    const diffMs = now - date;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHours = Math.floor(diffMin / 60);
+    const pad = (n) => String(n).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    const seconds = pad(d.getSeconds());
 
-    const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    if (diffSec < 60) {
-      return 'Just now';
-    } else if (diffMin < 60) {
-      return `${diffMin}m ago (${timeString})`;
-    } else if (diffHours < 24 && date.getDate() === now.getDate()) {
-      return `Today at ${timeString}`;
-    } else if (diffHours < 48 && date.getDate() === now.getDate() - 1) {
-      return `Yesterday at ${timeString}`;
-    } else {
-      const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      return `${dateString}, ${timeString}`;
-    }
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
 
   function updateLastConnectedDisplay(timestamp) {
     if (lastConnectedTimeEl) {
-      lastConnectedTimeEl.textContent = formatTime(timestamp);
+      lastConnectedTimeEl.textContent = formatExactDateTime(timestamp);
     }
   }
 
