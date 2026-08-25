@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "IIT BHU Wi-Fi AutoConnect",
+  "version": "1.0.0",
+  "description": "Automatically logs into the IIT BHU campus Wi-Fi and LAN captive portal.",
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "*://192.168.249.1/*",
+    "*://detectportal.firefox.com/*",
+    "*://connectivitycheck.gstatic.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "IIT BHU Wi-Fi AutoConnect",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://192.168.249.1/*",
+        "*://*/*fgtauth*",
+        "*://detectportal.firefox.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

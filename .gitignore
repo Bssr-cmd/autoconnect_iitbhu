@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Configuration & Credentials (CRITICAL - Do NOT commit personal configs)
+config.json
+*.config
+~/.config/autoconnect_iitbhu/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Testing & Coverage
+.coverage
+htmlcov/
+.pytest_cache/
