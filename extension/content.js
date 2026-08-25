@@ -48,7 +48,7 @@
     input.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  function attemptAutoLogin() {
+  async function attemptAutoLogin() {
     // 1. Locate username field
     const userInput =
       document.querySelector('input[name="username"]') ||
@@ -67,6 +67,15 @@
     }
 
     showToast('⚡ IIT BHU AutoConnect: Logging in...');
+
+    // Record last connected timestamp in local storage
+    const now = Date.now();
+    await chrome.storage.local.set({ lastConnectedAt: now });
+    try {
+      chrome.runtime.sendMessage({ type: 'AUTO_LOGIN_TRIGGERED', timestamp: now });
+    } catch {
+      // Ignore background message failure
+    }
 
     // Fill credentials
     setInputValue(userInput, username);

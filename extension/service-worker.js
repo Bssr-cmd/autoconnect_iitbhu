@@ -13,6 +13,14 @@ chrome.runtime.onInstalled.addListener(async () => {
   await chrome.alarms.create('checkConnectivity', { periodInMinutes: 5 });
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message && (message.type === 'AUTO_LOGIN_TRIGGERED' || message.type === 'LOGIN_SUCCESS')) {
+    const timestamp = message.timestamp || Date.now();
+    chrome.storage.local.set({ lastConnectedAt: timestamp });
+  }
+  return false;
+});
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'checkConnectivity') {
     try {

@@ -10,13 +10,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const togglePassBtn = document.getElementById('toggle-password');
   const connectBtn = document.getElementById('connect-btn');
   const statusPill = document.getElementById('status-pill');
+  const lastConnectedTimeEl = document.getElementById('last-connected-time');
   const toast = document.getElementById('toast');
 
-  // 1. Load stored settings
-  const stored = await chrome.storage.local.get(['username', 'password', 'autoLogin']);
+  // 1. Load stored settings and last connected timestamp
+  const stored = await chrome.storage.local.get(['username', 'password', 'autoLogin', 'lastConnectedAt']);
   if (stored.username) userInput.value = stored.username;
   if (stored.password) passInput.value = stored.password;
   if (stored.autoLogin !== undefined) autoLoginToggle.checked = stored.autoLogin;
+  updateLastConnectedDisplay(stored.lastConnectedAt);
 
   // 2. Check network status
   checkStatus();
@@ -56,7 +58,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Save first
-    await chrome.storage.local.set({ username, password, autoLogin: autoLoginToggle.checked });
+    const now = Date.now();
+    await chrome.storage.local.set({
+      username,
+      password,
+      autoLogin: autoLoginToggle.checked,
+      lastConnectedAt: now
+    });
+    updateLastConnectedDisplay(now);
 
     showToast('Opening portal...', true);
     // Open captive portal in a tab
@@ -71,6 +80,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => {
       toast.classList.add('hidden');
     }, 3000);
+  }
+
+  function formatTime(timestamp) {
+    if (!timestamp) return 'Never';
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Never';
+
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHours = Math.floor(diffMin / 60);
+
+    const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (diffSec < 60) {
+      return 'Just now';
+    } else if (diffMin < 60) {
+      return `${diffMin}m ago (${timeString})`;
+    } else if (diffHours < 24 && date.getDate() === now.getDate()) {
+      return `Today at ${timeString}`;
+    } else if (diffHours < 48 && date.getDate() === now.getDate() - 1) {
+      return `Yesterday at ${timeString}`;
+    } else {
+      const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return `${dateString}, ${timeString}`;
+    }
+  }
+
+  function updateLastConnectedDisplay(timestamp) {
+    if (lastConnectedTimeEl) {
+      lastConnectedTimeEl.textContent = formatTime(timestamp);
+    }
   }
 
   async function checkStatus() {
