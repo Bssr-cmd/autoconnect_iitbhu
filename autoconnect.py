@@ -62,14 +62,14 @@ class AutoConnectDaemon:
         password = self.config.get("password")
 
         logger.info(f"Initiating login check for user: {username}...")
-        status, _, magic = self.client.check_network_status()
+        status, info, magic = self.client.check_network_status()
 
         if status == NetworkStatus.ONLINE:
             logger.info("[✓] Internet is already active and online! No login needed.")
             return True
 
         logger.info("[*] Captive portal detected. Attempting authentication...")
-        success, msg = self.client.login(username=username, password=password, magic=magic)
+        success, msg = self.client.login(username=username, password=password, magic=magic, portal_context=info)
 
         if success:
             logger.info(f"[✓] {msg}")
@@ -116,11 +116,11 @@ class AutoConnectDaemon:
 
         while self.running:
             try:
-                status, _, magic = self.client.check_network_status()
+                status, info, magic = self.client.check_network_status()
 
                 if status == NetworkStatus.CAPTIVE_PORTAL:
                     logger.warning("[!] Captive portal detected! Authenticating...")
-                    success, msg = self.client.login(username=username, password=password, magic=magic)
+                    success, msg = self.client.login(username=username, password=password, magic=magic, portal_context=info)
 
                     if success:
                         logger.info(f"[✓] {msg}")

@@ -20,8 +20,8 @@ DEFAULT_SETTINGS = {
     "username": "",
     "password": "",
     "portal_host": "192.168.249.1",
-    "portal_auth_url": "http://192.168.249.1:1000/fgtauth",
-    "detection_url": "http://detectportal.firefox.com/canonical.html",
+    "portal_auth_url": "https://192.168.249.1:1000/fgtauth",
+    "detection_url": "http://connectivitycheck.gstatic.com/generate_204",
     "fallback_detection_url": "http://connectivitycheck.gstatic.com/generate_204",
     "check_interval_seconds": 20,
     "keepalive_interval_seconds": 300,
@@ -146,7 +146,7 @@ class ConfigManager:
         portal_host = input(f"Captive Portal Host [{self.get('portal_host')}]: ").strip()
         if portal_host:
             self.set("portal_host", portal_host)
-            self.set("portal_auth_url", f"http://{portal_host}:1000/fgtauth")
+            self.set("portal_auth_url", f"https://{portal_host}:1000/fgtauth")
 
         notif_input = input(f"Enable Desktop Notifications? (y/n) [y]: ").strip().lower()
         enable_notif = notif_input != 'n'

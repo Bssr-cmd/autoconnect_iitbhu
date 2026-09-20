@@ -18,8 +18,12 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-echo "[*] Installing Python dependencies..."
-python3 -m pip install --quiet --user -r requirements.txt || python3 -m pip install --quiet -r requirements.txt || true
+echo "[*] Checking Python dependencies..."
+if ! python3 -c "import requests, urllib3" &> /dev/null; then
+    python3 -m pip install --quiet --user --break-system-packages -r requirements.txt 2>/dev/null || \
+    python3 -m pip install --quiet --user -r requirements.txt 2>/dev/null || \
+    python3 -m pip install --quiet -r requirements.txt 2>/dev/null || true
+fi
 
 # Make executables
 chmod +x autoconnect.py service_installer.py
