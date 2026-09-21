@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 # Import project modules
-from config import ConfigManager, _obfuscate, _deobfuscate
+from config import ConfigManager, StateManager, _obfuscate, _deobfuscate
 from portal_client import PortalClient, NetworkStatus, find_campus_interface_ip
 
 
@@ -44,6 +44,27 @@ class TestConfigManager(unittest.TestCase):
         self.assertEqual(loaded.get("username"), "test_user_123")
         self.assertEqual(loaded.get("password"), "TestPassword99")
         self.assertTrue(loaded.is_configured())
+
+
+class TestStateManager(unittest.TestCase):
+    """Test persistent runtime state management."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.state_path = Path(self.temp_dir.name) / "state.json"
+        self.state = StateManager(state_file=self.state_path)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_state_persistence(self):
+        self.assertEqual(self.state.get_all(), {})
+        self.state.update(last_login_time="2026-09-21 12:00:00", current_status="ONLINE")
+
+        loaded = StateManager(state_file=self.state_path)
+        self.assertEqual(loaded.get("last_login_time"), "2026-09-21 12:00:00")
+        self.assertEqual(loaded.get("current_status"), "ONLINE")
+        self.assertIsNone(loaded.get("nonexistent_key"))
 
 
 class TestPortalClient(unittest.TestCase):

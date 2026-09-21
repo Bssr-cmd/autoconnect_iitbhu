@@ -15,6 +15,7 @@ from typing import Dict, Any, Optional
 
 DEFAULT_CONFIG_DIR = Path.home() / ".config" / "autoconnect_iitbhu"
 DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_DIR / "config.json"
+DEFAULT_STATE_FILE = DEFAULT_CONFIG_DIR / "state.json"
 
 DEFAULT_SETTINGS = {
     "username": "",
@@ -161,3 +162,39 @@ class ConfigManager:
         else:
             print("\n[-] Failed to save configuration.")
             return False
+
+
+class StateManager:
+    """Manages persistent runtime status (last login, last check, active IP)."""
+
+    def __init__(self, state_file: Optional[Path] = None):
+        self.state_file = Path(state_file) if state_file else DEFAULT_STATE_FILE
+
+    def get_all(self) -> Dict[str, Any]:
+        """Read all state variables."""
+        if not self.state_file.exists():
+            return {}
+        try:
+            with open(self.state_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.get_all().get(key, default)
+
+    def update(self, **kwargs):
+        """Update and persist one or more state variables."""
+        state = self.get_all()
+        state.update(kwargs)
+        try:
+            self.state_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.state_file, "w", encoding="utf-8") as f:
+                json.dump(state, f, indent=2)
+            try:
+                os.chmod(self.state_file, stat.S_IRUSR | stat.S_IWUSR)
+            except Exception:
+                pass
+        except Exception:
+            pass
+

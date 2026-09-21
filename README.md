@@ -129,12 +129,22 @@ python3 autoconnect.py --configure
 python3 autoconnect.py --login
 ```
 
-#### 4. Check live network status:
+#### 4. Check live status & connection history:
 ```bash
 python3 autoconnect.py --status
 ```
 
-#### 5. Run the background daemon manually:
+#### 5. Check when it connected last time:
+```bash
+python3 autoconnect.py --last-connected
+```
+
+#### 6. View background service logs:
+```bash
+python3 autoconnect.py --logs
+```
+
+#### 7. Run the background daemon manually:
 ```bash
 python3 autoconnect.py --daemon
 ```
