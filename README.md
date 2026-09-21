@@ -39,7 +39,9 @@ On the **IIT (BHU) Varanasi** campus network (Wi-Fi & Hostel LAN), the institute
 ## ✨ Features
 
 - 🔄 **Fully Autonomous Background Daemon**: Detects captive portal redirects silently and authenticates within seconds without opening any browser tabs.
-- 💓 **Intelligent Keep-Alive Heartbeat**: Prevents idle disconnects by dispatching periodic lightweight pings to the gateway.
+- 🌐 **Multi-Interface Route Guard**: Automatically binds outbound traffic directly to the physical campus network card (`172.16-31.*`), ensuring login packets always reach the firewall even when mobile hotspot or USB tethering is connected concurrently.
+- ⚡ **Authentic Two-Step Handshake**: Probes connectivity, dynamically extracts the live hidden `magic` token and `4Tredir` target from the login page HTML, and submits directly to the Fortinet form action (`/`).
+- 💓 **Intelligent Keep-Alive Heartbeat**: Captures the session token (`/keepalive?{token}`) upon successful authentication and dispatches periodic pings to keep your session permanently active.
 - 🔔 **Cross-Platform Native Notifications**: Sends unobtrusive desktop notifications on successful connection (Linux `notify-send`/`kdialog`, macOS `osascript`, Windows Toast).
 - 🔒 **Zero-Trust Local Security**: Credentials are encrypted/obfuscated locally (`~/.config/autoconnect_iitbhu/config.json`) with strict POSIX `0600` permissions (owner-only access).
 - 🧩 **Manifest V3 Browser Extension**: Includes a modern Chrome/Brave/Edge extension for instant <100ms form auto-fill & auto-submit.
@@ -51,37 +53,41 @@ On the **IIT (BHU) Varanasi** campus network (Wi-Fi & Hostel LAN), the institute
 
 ```mermaid
 graph TD
-    A["Wi-Fi / LAN Connected"] --> B{"Connectivity Check (HTTP 204)"}
-    B -->|"Direct Internet Access"| C["Online: Session Keep-Alive"]
-    B -->|"Intercepted (302/307)"| D["Captive Portal (192.168.249.1:1000)"]
-    D --> E["Extract Dynamic 'magic' Token"]
-    E --> F["POST Credentials to /fgtauth"]
-    F --> G{"Authentication Valid?"}
-    G -->|"Success"| H["Internet Unlocked + Notification"]
-    G -->|"Failure"| I["Log Error & Exponential Backoff"]
-    H --> C
+    A["Wi-Fi / LAN Connected"] --> B{"Campus Interface Bound"}
+    B --> C{"Connectivity Check (HTTP 204)"}
+    C -->|"Direct Internet Access"| D["Online: Keep-Alive Heartbeat"]
+    C -->|"Intercepted (HTML / 302)"| E["Captive Portal (192.168.249.1:1000/fgtauth)"]
+    E --> F["Parse Form Action (/), Live 'magic' & 4Tredir"]
+    F --> G["POST Credentials to Gateway (/)"]
+    G --> H{"Keepalive Redirect Received?"}
+    H -->|"Success"| I["Internet Unlocked + Keepalive Session Captured"]
+    H -->|"Failure"| J["Log Error & Exponential Backoff"]
     I --> D
+    J --> E
 ```
 
 ```
 [ Laptop Connected to Campus Wi-Fi / LAN ]
                    │
                    ▼
+       [ Bind to Campus Interface (172.16-31.*) ]
+                   │
+                   ▼
        [ Connectivity Probe (204) ]
          │                       │
          ├─ (Online) ────────────┼──────────► [ Active: Keep-Alive Ping (5m) ]
          │                       │
-         └─ (302 Intercept) ─────▼
-                  [ Captive Portal at 192.168.249.1:1000 ]
+         └─ (Intercepted) ───────▼
+                  [ Captive Portal at 192.168.249.1:1000/fgtauth ]
                                  │
                                  ▼
-                  [ Extract Dynamic 'magic' Token ]
+                  [ Fetch HTML & Extract Form Magic + 4Tredir ]
                                  │
                                  ▼
-                  [ POST Roll No + Password to /fgtauth ]
+                  [ POST Roll No + Password to http://192.168.249.1:1000/ ]
                                  │
                                  ▼
-                  [ Internet Unlocked Successfully! ]
+                  [ Capture Keepalive Session & Unlock Internet! ]
 ```
 
 ---
@@ -210,8 +216,8 @@ autoconnect_iitbhu/
 ├── notifier.py             # Cross-platform desktop notification provider
 ├── service_installer.py    # Cross-platform background service installer
 ├── install.sh              # 1-Click installation shell script
+├── package_extension.py    # Extension packager & zip generator
 ├── requirements.txt        # Python dependencies
-├── generate_icons.py       # Extension icon generator
 ├── tests/
 │   └── test_portal.py      # Unit test suite (token parsing, status tests)
 └── extension/              # Manifest V3 Chrome/Edge/Brave Extension
@@ -227,8 +233,8 @@ autoconnect_iitbhu/
 ## ❓ FAQ & Troubleshooting
 
 <details>
-<summary><b>1. What is <code>http://192.168.249.1:1000</code>?</b></summary>
-<code>192.168.249.1</code> is the IP address of the IIT BHU campus firewall gateway. Port <code>1000</code> is the Fortinet captive portal authentication service (<code>fgtauth</code>) that validates user credentials.
+<summary><b>1. What is <code>http://192.168.249.1:1000</code> and how does authentication work?</b></summary>
+<code>192.168.249.1</code> is the IP address of the IIT BHU Fortinet firewall gateway. Port <code>1000</code> hosts the captive portal. When unauthenticated, HTTP traffic is intercepted and redirected to <code>/fgtauth</code> which displays the login form with dynamic hidden session tokens (<code>magic</code> and <code>4Tredir</code>). Credentials are submitted via POST to <code>/</code>, which returns a session keepalive URL (<code>/keepalive?{token}</code>).
 </details>
 
 <details>
@@ -246,6 +252,11 @@ Yes! Both IIT BHU campus Wi-Fi and hostel LAN connections share the same captive
 <summary><b>4. How do I run the automated unit tests?</b></summary>
 Run:
 <pre><code>python3 -m unittest discover tests/</code></pre>
+</details>
+
+<details>
+<summary><b>5. What happens if I am connected to mobile hotspot or USB tethering at the same time?</b></summary>
+The client automatically detects the network interface assigned to the campus subnet (typically <code>172.16.0.0/12</code>, e.g. <code>172.16.x.x</code> to <code>172.31.x.x</code>) and binds outbound requests directly to that adapter. This guarantees login requests and portal checks reach the campus firewall even if another default route (such as mobile hotspot with lower route metric) is active.
 </details>
 
 ---
