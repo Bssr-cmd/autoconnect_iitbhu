@@ -46,7 +46,7 @@ def find_campus_interface_ip() -> Optional[str]:
     """
     try:
         import subprocess
-        # 1. Check nmcli for active IIT(BHU) or campus Wi-Fi connection
+        # 1. Check nmcli for active connected campus connection
         try:
             out = subprocess.check_output(
                 ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device"],
@@ -56,35 +56,36 @@ def find_campus_interface_ip() -> Optional[str]:
                 parts = line.split(":")
                 if len(parts) >= 4 and parts[2] == "connected":
                     dev, dev_type, _, conn = parts[0], parts[1], parts[2], parts[3]
-                    if "iit" in conn.lower() or dev_type in ("wifi", "wireless"):
+                    if "iit" in conn.lower() or dev_type in ("wifi", "wireless", "ethernet"):
                         ip_out = subprocess.check_output(
                             ["ip", "-br", "addr", "show", "dev", dev],
                             stderr=subprocess.DEVNULL
                         ).decode()
                         for ip_line in ip_out.splitlines():
                             items = ip_line.split()
-                            if len(items) >= 3 and "/" in items[2]:
+                            if len(items) >= 3 and items[1].upper() == "UP" and "/" in items[2]:
                                 return items[2].split("/")[0]
         except Exception:
             pass
 
-        # 2. Check for campus subnet 172.16.0.0/12 (172.16.* - 172.31.*)
+        # 2. Check active physical interfaces (UP) on campus subnet 172.16.0.0/12
         out = subprocess.check_output(["ip", "-br", "addr", "show"], stderr=subprocess.DEVNULL).decode()
-        campus_ip = None
         for line in out.splitlines():
             items = line.split()
-            if len(items) >= 3 and "/" in items[2]:
-                ip = items[2].split("/")[0]
+            if len(items) >= 3:
+                ifname, state, cidr = items[0], items[1].upper(), items[2]
+                # Ignore down interfaces and virtual bridges/containers
+                if state != "UP" or any(v in ifname for v in ("docker", "br-", "veth", "virbr", "tun", "tap", "lo")):
+                    continue
+                ip = cidr.split("/")[0]
                 if ip.startswith("172."):
                     try:
                         second = int(ip.split(".")[1])
                         if 16 <= second <= 31:
-                            if items[0].startswith(("wl", "wifi")):
-                                return ip
-                            campus_ip = ip
+                            return ip
                     except (ValueError, IndexError):
                         pass
-        return campus_ip
+        return None
     except Exception:
         return None
 
